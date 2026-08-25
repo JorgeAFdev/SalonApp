@@ -34,7 +34,7 @@ class Email {
 
         $content = "<html>";
         $content .= "<p><strong>Hello " . $this->name . " <strong>You have created your account in Salon App, You just have to confirm it by clicking on the following link</p>";
-        $content .= "<p>Press here: <a href='https://salonappjorge.alwaysdata.net/confirm-account?token=" . $this->token . "'>Confirm Account</a></p>";
+        $content .= "<p>Press here: <a href='" . $_ENV['APP_URL'] . "/confirm-account?token=" . $this->token . "'>Confirm Account</a></p>";
         $content .= "<p>if you did not request this account, you can ignore the message</p>";
         $content .= "</html>";
         $mail->Body = $content;
@@ -63,7 +63,7 @@ class Email {
 
         $content = "<html>";
         $content .= "<p><strong>Hello " . $this->name . " <strong>You have requested to reset your password. Please follow the link below to reset it.</p>";
-        $content .= "<p>Press here: <a href='https://salonappjorge.alwaysdata.net/reset-password?token=" . $this->token . "'>Reset Password</a></p>";
+        $content .= "<p>Press here: <a href='" . $_ENV['APP_URL'] . "/reset-password?token=" . $this->token . "'>Reset Password</a></p>";
         $content .= "<p>if you did not request this account, you can ignore the message</p>";
         $content .= "</html>";
         $mail->Body = $content;
