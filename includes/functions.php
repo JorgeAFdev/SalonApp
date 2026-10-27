@@ -24,6 +24,7 @@ function isLast(string $current, string $next) : bool {
 function isAuth() : void { 
     if(!isset($_SESSION['login'])) {
         header('Location: /');
+        exit;
     }
 }
 
@@ -31,5 +32,6 @@ function isAuth() : void {
 function isAdmin() : void { 
     if(!isset($_SESSION['admin'])) {
         header('Location: /');
+        exit;
     }
 }

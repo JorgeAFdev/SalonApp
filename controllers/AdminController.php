@@ -14,6 +14,7 @@ class AdminController {
 
         if(!checkdate($dates[1], $dates[2], $dates[0])) {
             header('Location: 404');
+            exit;
         }
 
         // Query the database
