@@ -32,9 +32,9 @@ class ActiveRecord {
     }
 
     // SQL query to create an object in memory
-    public static function querySQL($query) {
+    public static function querySQL($query, $params = []) {
         // Query the database.
-        $result = self::$db->query($query);
+        $result = self::$db->execute_query($query, $params);
 
         // Iterate the results 
         $array = [];
@@ -72,14 +72,9 @@ class ActiveRecord {
         return $attributes;
     }
 
-    // Sanitize data before saving to DB
-    public function sanitizeAttributes() {
-        $attributes = $this->attributes();
-        $sanitized = [];
-        foreach($attributes as $key => $value ) {
-            $sanitized[$key] = is_null($value) ? '' : self::$db->escape_string($value);
-        }
-        return $sanitized;
+    // Null is stored as an empty string, as the escaping code before prepared statements did
+    protected function valuesForDB() {
+        return array_map(fn($value) => $value ?? '', $this->attributes());
     }
 
     // Synchronize DB with Objects in memory
@@ -113,45 +108,48 @@ class ActiveRecord {
 
     // Search for a record by its ID
     public static function find($id) {
-        $query = "SELECT * FROM " . static::$table  ." WHERE id = " . $id;
-        $result = self::querySQL($query);
+        $query = "SELECT * FROM " . static::$table  ." WHERE id = ?";
+        $result = self::querySQL($query, [$id]);
         return array_shift( $result ) ;
     }
 
     // Search for a record by column and value
     public static function where($column, $value) {
-        $query = "SELECT * FROM " . static::$table  ." WHERE $column = '" . $value . "'";
-        $result = self::querySQL($query);
+        // A column name cannot be a placeholder, so it must be one of the model's own columns
+        if(!in_array($column, static::$columnsDB, true)) {
+            throw new \InvalidArgumentException("Unknown column: $column");
+        }
+        $query = "SELECT * FROM " . static::$table  ." WHERE $column = ?";
+        $result = self::querySQL($query, [$value]);
         return array_shift( $result ) ;
     }
 
     // Flat SQL query (use when the model methods are not sufficient)
-    public static function SQL($query) {
-        $result = self::querySQL($query);
+    public static function SQL($query, $params = []) {
+        $result = self::querySQL($query, $params);
         return $result;
     }
 
     // Get records with a limit
     public static function get($limite) {
-        $query = "SELECT * FROM " . static::$table . " LIMIT " . $limite;
+        $query = "SELECT * FROM " . static::$table . " LIMIT " . (int) $limite;
         $result = self::querySQL($query);
         return array_shift( $result ) ;
     }
 
     // Create a new record
     public function create() {
-        // Sanitize data
-        $attributes = $this->sanitizeAttributes();
+        $attributes = $this->valuesForDB();
 
         // Insert into the database
         $query = " INSERT INTO " . static::$table . " ( ";
         $query .= join(', ', array_keys($attributes));
-        $query .= " ) VALUES ('"; 
-        $query .= join("', '", array_values($attributes));
-        $query .= " ') ";
+        $query .= " ) VALUES (";
+        $query .= join(', ', array_fill(0, count($attributes), '?'));
+        $query .= ") ";
 
         // query results
-        $result = self::$db->query($query);
+        $result = self::$db->execute_query($query, array_values($attributes));
         return [
            'result' =>  $result,
            'id' => self::$db->insert_id
@@ -160,30 +158,29 @@ class ActiveRecord {
 
     // Update record
     public function update() {
-        // sanitize data
-        $attributes = $this->sanitizeAttributes();
+        $attributes = $this->valuesForDB();
 
         // Iterate to add each field from the database
         $valores = [];
-        foreach($attributes as $key => $value) {
-            $valores[] = "{$key}='{$value}'";
+        foreach(array_keys($attributes) as $key) {
+            $valores[] = "{$key} = ?";
         }
 
         // query SQL
         $query = "UPDATE " . static::$table ." SET ";
         $query .=  join(', ', $valores );
-        $query .= " WHERE id = '" . self::$db->escape_string($this->id) . "' ";
-        $query .= " LIMIT 1 "; 
+        $query .= " WHERE id = ? ";
+        $query .= " LIMIT 1 ";
 
         // Update BD
-        $result = self::$db->query($query);
+        $result = self::$db->execute_query($query, [...array_values($attributes), $this->id]);
         return $result;
     }
 
     // Delete a record by its id
     public function delete() {
-        $query = "DELETE FROM "  . static::$table . " WHERE id = " . self::$db->escape_string($this->id) . " LIMIT 1";
-        $result = self::$db->query($query);
+        $query = "DELETE FROM "  . static::$table . " WHERE id = ? LIMIT 1";
+        $result = self::$db->execute_query($query, [$this->id]);
         return $result;
     }
 }
