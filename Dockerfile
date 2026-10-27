@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.5-apache
 
 # Start from the production ini template: the base image ships no php.ini, so the
 # compiled defaults (display_errors=On, expose_php=On) would leak DB host/user in
