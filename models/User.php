@@ -77,9 +77,9 @@ class User extends ActiveRecord {
     }
 
     public function userExists() {
-        $query = " SELECT * FROM " . self::$table . " WHERE email = '" . $this->email . "' LIMIT 1";
+        $query = " SELECT * FROM " . self::$table . " WHERE email = ? LIMIT 1";
 
-        $result = self::$db->query($query);
+        $result = self::$db->execute_query($query, [$this->email]);
 
         if($result->num_rows) {
             self::$alerts['error'][] = 'This Email is already registered.';
