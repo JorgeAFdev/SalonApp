@@ -33,7 +33,7 @@ class LoginController {
                         $_SESSION['login'] = true;
 
                         // Redirect
-                        if($user->admin === "1") {
+                        if($user->admin) {
                             $_SESSION['admin'] = $user->admin ?? null;
                             header('Location: /admin');
                         } else {
@@ -71,7 +71,7 @@ class LoginController {
             if(empty($alerts)) {
                 $user = User::where('email', $auth->email);
                 
-                if($user && $user->confirmed === "1") {
+                if($user && $user->confirmed) {
                     // Generate Token
                     $user->createToken();
                     $user->save();
