@@ -13,9 +13,13 @@ class APIController {
     }
 
     public static function save() {
+        session_start();
+        isAuth();
 
         // Store the appointment and return the ID
         $appointment = new Appointment($_POST);
+        // The client sends userId, but only the session decides whose appointment it is.
+        $appointment->userId = $_SESSION['id'];
         $result = $appointment->save();
 
         $id = $result['id'];
@@ -35,6 +39,8 @@ class APIController {
     }
 
     public static function delete() {
+        session_start();
+        isAdmin();
         if($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id = $_POST['id'];
             $appointment = Appointment::find($id);
